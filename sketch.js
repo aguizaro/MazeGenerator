@@ -16,7 +16,13 @@ let oscMaze; // oscillator for maze generation
 let oscPath; // oscillator for pathfinding
 let current;
 
-let w = 40; // cell width
+//local storage
+let sliderValLocal = localStorage.getItem("sliderVal");
+let sliderVal = sliderValLocal ? parseInt(sliderValLocal) : 4;
+let wLocal = localStorage.getItem("w");
+let isMutedLocal = localStorage.getItem("isMuted");
+
+let w = wLocal ? parseInt(wLocal) : 40;
 let scalar = 10;
 
 // flags
@@ -27,7 +33,7 @@ let generationStarted = false;
 let path = []; // path from start to end
 let pathIndex = 0;
 let pathInProgress = false;
-let isMuted = false;
+let isMuted = isMutedLocal ? JSON.parse(isMutedLocal) : false;
 let usingRandom = false; // flag to check if random maze is being used
 
 function setup() {
@@ -45,7 +51,8 @@ function setup() {
   // button to reset
   resetButton = createButton("Reset Grid");
   resetButton.mousePressed(resetGrid);
-  styleButton(resetButton, color(100, 0, 100), false);
+  resetButton.attribute("disabled", true);
+  styleButton(resetButton, color(100, 0, 100), true);
 
   // button to show path
   pathfindingButton = createButton("Show Path");
@@ -54,7 +61,8 @@ function setup() {
   styleButton(pathfindingButton, "blue", true);
 
   // mute button
-  muteButton = createButton("Mute");
+  const mutedText = isMuted ? "Unmute" : "Mute";
+  muteButton = createButton(mutedText);
   muteButton.mousePressed(toggleMute);
   styleButton(muteButton, color(250, 140, 0), false); //dark yellow
   muteButton.style("width", "125px");
@@ -75,7 +83,7 @@ function setup() {
   buttonDiv.parent(document.body);
 
   //size slider
-  slider = createSlider(1, 6, 4, 1); // range 1-6, start = 4, step= 1
+  slider = createSlider(1, 6, sliderVal, 1); // range 1-6, start = 4 or local storage val, step= 1
   slider.input(onSliderChange);
   styleSlider(slider);
 
@@ -108,6 +116,7 @@ function draw() {
   if (generationStarted) {
     if (stack.length > 0) {
       current = stack[stack.length - 1];
+      current.visited = true;
       current.highlight(255);
       //play sound
       let frequency = map(current.i * current.j, 0, cols * rows, 100, 600);
@@ -180,9 +189,9 @@ function randomMaze() {
   // start random generation
   resetGrid();
   start = grid[floor(random(0, grid.length))];
-  //end = grid[grid.length - 1];
   startSet = true;
-  //endSet = true;
+  resetButton.removeAttribute("disabled");
+  styleButton(resetButton, color(100, 0, 100), false);
   stack.push(start);
   generationStarted = true;
   usingRandom = true;
@@ -243,6 +252,8 @@ function resetGrid() {
   }
   pathfindingButton.attribute("disabled", true);
   styleButton(pathfindingButton, "blue", true);
+  resetButton.attribute("disabled", true);
+  styleButton(resetButton, color(100, 0, 100), true);
   stack = [];
   path = [];
   pathIndex = 0;
@@ -252,6 +263,7 @@ function resetGrid() {
   endSet = false;
   start = null;
   end = null;
+  settingStart = true;
   usingRandom = false;
   randomButton.html("Random");
   styleButton(randomButton, "green", false);
@@ -267,6 +279,8 @@ function onSliderChange() {
   cols = floor(width / w);
   rows = floor(height / w);
   initializeGrid();
+  localStorage.setItem("sliderVal", slider.value());
+  localStorage.setItem("w", w);
 }
 
 function toggleMute() {
@@ -276,6 +290,7 @@ function toggleMute() {
   } else {
     muteButton.html("Mute");
   }
+  localStorage.setItem("isMuted", isMuted);
 }
 
 // style functions -------------------------------------------------------------------
@@ -374,7 +389,12 @@ function Cell(i, j) {
     let y = this.j * w;
     noStroke();
     fill(color);
-    rect(x, y, w, w);
+    if (color == "green" || color == "red") {
+      //inner circle
+      ellipse(x + w / 2, y + w / 2, w / 2);
+    } else {
+      rect(x, y, w, w);
+    }
   };
 
   this.checkNeighbors = function () {
@@ -532,6 +552,8 @@ function mousePressed() {
       start = grid[cellIndex];
       startSet = true;
       settingStart = false;
+      resetButton.removeAttribute("disabled");
+      styleButton(resetButton, color(100, 0, 100), false);
       // otherwise set end, and check its not the same cell
     } else if (grid[cellIndex] !== start) {
       end = grid[cellIndex];
