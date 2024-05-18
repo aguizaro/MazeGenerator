@@ -31,6 +31,7 @@ let isMuted = false;
 let usingRandom = false; // flag to check if random maze is being used
 
 function setup() {
+  getAudioContext().suspend();
   createCanvas(600, 600);
   cols = floor(width / w);
   rows = floor(height / w);
@@ -517,6 +518,7 @@ function aStar(start, goal) {
 // Mouse click event -------------------------------------------------------------
 
 function mousePressed() {
+  userStartAudio();
   if (generationStarted || usingRandom) return;
 
   let i = floor(mouseX / w);
