@@ -4,14 +4,13 @@ html {
   align-items: center;
   height: 100%;
   background-color: #f0f0f0;
+  min-width: 900px;
 }
 
 body {
+
   margin: 0;
   padding: 0;
   text-align: center;
-}
-
-canvas {
-  display: block;
+  width: 900px;
 }
